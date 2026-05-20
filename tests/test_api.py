@@ -129,5 +129,25 @@ class TestNLPAPI(unittest.TestCase):
         self.assertEqual(res["zone_status"], "Red Zone")
         self.assertEqual(res["total_score"], 11)
 
+    def test_swagger_html_unauthenticated(self):
+        """Should return Swagger UI HTML page at /docs without requiring an API key."""
+        url = f"{self.base_url}/docs"
+        req = urllib.request.Request(url, method='GET')
+        with urllib.request.urlopen(req) as response:
+            self.assertEqual(response.status, 200)
+            html = response.read().decode('utf-8')
+            self.assertIn("swagger-ui", html)
+            self.assertIn("SwaggerUIBundle", html)
+
+    def test_swagger_json_unauthenticated(self):
+        """Should return Swagger OpenAPI spec JSON at /docs/api.json without requiring an API key."""
+        url = f"{self.base_url}/docs/api.json"
+        req = urllib.request.Request(url, method='GET')
+        with urllib.request.urlopen(req) as response:
+            self.assertEqual(response.status, 200)
+            spec = json.loads(response.read().decode('utf-8'))
+            self.assertEqual(spec["openapi"], "3.0.0")
+            self.assertEqual(spec["info"]["title"], "APPIKS NLP Mental Distress Classifier API")
+
 if __name__ == '__main__':
     unittest.main()

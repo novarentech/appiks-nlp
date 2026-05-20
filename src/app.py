@@ -1,5 +1,6 @@
 import os
 import logging
+import json
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from src.classifier import classify_weighted
@@ -19,13 +20,31 @@ API_TOKEN = os.getenv("API_TOKEN")
 if not API_TOKEN:
     logger.warning("API_TOKEN is not set in environment variables. Requests might fail authentication if no token is configured.")
 
+# Load Swagger OpenAPI JSON and Swagger HTML UI from external files
+try:
+    swagger_json_path = os.path.join(os.path.dirname(__file__), "swagger.json")
+    with open(swagger_json_path, "r", encoding="utf-8") as f:
+        SWAGGER_JSON = json.load(f)
+except Exception as e:
+    logger.error(f"Failed to load swagger.json: {str(e)}")
+    SWAGGER_JSON = {}
+
+try:
+    swagger_html_path = os.path.join(os.path.dirname(__file__), "swagger.html")
+    with open(swagger_html_path, "r", encoding="utf-8") as f:
+        SWAGGER_HTML = f.read()
+except Exception as e:
+    logger.error(f"Failed to load swagger.html: {str(e)}")
+    SWAGGER_HTML = "<h1>API Documentation could not be loaded</h1>"
+
+
 @app.before_request
 def authenticate_request():
     """
     Authenticate request using the custom header X-APPIKS-NLP-KEY.
     """
-    # Expose a health check endpoint without authentication
-    if request.path == "/health" or request.path == "/":
+    # Expose health, index, and docs endpoints without authentication
+    if request.path in ("/health", "/", "/docs", "/docs/api.json"):
         return
 
     client_key = request.headers.get("X-APPIKS-NLP-KEY")
@@ -37,6 +56,20 @@ def authenticate_request():
     if client_key != API_TOKEN:
         logger.warning(f"Authentication failed: Invalid key from IP {request.remote_addr}")
         return jsonify({"error": "Invalid API Key."}), 401
+
+@app.route("/docs", methods=["GET"])
+def get_swagger_html():
+    """
+    Serve Swagger UI page.
+    """
+    return SWAGGER_HTML, 200
+
+@app.route("/docs/api.json", methods=["GET"])
+def get_swagger_json():
+    """
+    Serve Swagger OpenAPI specification.
+    """
+    return jsonify(SWAGGER_JSON), 200
 
 @app.route("/health", methods=["GET"])
 def health_check():
