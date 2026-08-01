@@ -82,52 +82,59 @@ class TestNLPAPI(unittest.TestCase):
         self.assertIn("error", res)
         self.assertEqual(res["error"], "'text' field must be a string.")
 
-    def test_no_trigger_case(self):
-        """Should classify academic complaint as 'No Trigger' with weight 1."""
+    def test_no_trigger_academic_case(self):
+        """Should classify academic complaint as 'No Trigger' with score 0."""
         body = {"text": "Hari ini capek banget belajar matematika"}
         headers = {"X-APPIKS-NLP-KEY": self.api_token}
         res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
         
         self.assertEqual(res["zone_status"], "No Trigger")
-        self.assertEqual(res["total_score"], 1)
-        
-        # Check matched keywords structure
-        self.assertEqual(len(res["matched_keywords"]), 1)
-        self.assertEqual(res["matched_keywords"][0]["stem"], "capek")
-        self.assertEqual(res["matched_keywords"][0]["weight"], 1)
-        self.assertEqual(res["matched_keywords"][0]["zone"], "Yellow")
+        self.assertEqual(res["total_score"], 0)
+        self.assertEqual(len(res["matched_keywords"]), 0)
 
     def test_yellow_zone_case(self):
-        """Should classify loneliness as 'Yellow Zone' with score 4."""
-        body = {"text": "Aku merasa sangat kesepian dan kosong"}
+        """Should classify 'ga ada gunanya lagi' as 'Yellow Zone' with score 6."""
+        body = {"text": "Aku ga ada gunanya lagi"}
         headers = {"X-APPIKS-NLP-KEY": self.api_token}
         res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
         
         self.assertEqual(res["zone_status"], "Yellow Zone")
-        self.assertEqual(res["total_score"], 4)
+        self.assertEqual(res["total_score"], 6)
         
         self.assertEqual(len(res["matched_keywords"]), 1)
-        self.assertEqual(res["matched_keywords"][0]["stem"], "kosong")
+        self.assertEqual(res["matched_keywords"][0]["stem"], "ada guna")
+        self.assertEqual(res["matched_keywords"][0]["weight"], 6)
+        self.assertEqual(res["matched_keywords"][0]["zone"], "Yellow")
 
     def test_red_zone_explicit_override(self):
-        """Should classify suicide mention as 'Red Zone' due to explicit high-weight keyword override."""
+        """Should classify suicide mention as 'Red Zone' due to explicit Red keyword override."""
         body = {"text": "Aku ingin akhiri hidup ini"}
         headers = {"X-APPIKS-NLP-KEY": self.api_token}
         res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
         
         self.assertEqual(res["zone_status"], "Red Zone")
-        self.assertEqual(res["total_score"], 9)
-        self.assertEqual(res["matched_keywords"][0]["stem"], "akhir")
+        self.assertEqual(res["total_score"], 10)
+        self.assertEqual(res["matched_keywords"][0]["stem"], "akhir hidup")
+        self.assertEqual(res["matched_keywords"][0]["zone"], "Red")
 
-    def test_red_zone_score_override(self):
-        """Should classify accumulative yellow keywords as 'Red Zone' if score >= 10."""
-        # capek (1) + guna (5) + sendiri (3) + co-occurrence bonus capek/guna (2) = 11
-        body = {"text": "Capek, ga ada gunanya hidup gini, sendirian terus"}
+    def test_red_zone_score_accumulation(self):
+        """Should classify accumulative yellow keywords as 'Red Zone' if score >= 15."""
+        body = {"text": "Capek hidup, lelah hidup, bosan hidup terus"}
         headers = {"X-APPIKS-NLP-KEY": self.api_token}
         res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
         
         self.assertEqual(res["zone_status"], "Red Zone")
-        self.assertEqual(res["total_score"], 11)
+        self.assertEqual(res["total_score"], 21)
+
+    def test_negation_handling_skip(self):
+        """Should skip Red Zone trigger when negated ('Aku tidak mau bunuh diri')."""
+        body = {"text": "Aku tidak mau bunuh diri"}
+        headers = {"X-APPIKS-NLP-KEY": self.api_token}
+        res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
+        
+        self.assertEqual(res["zone_status"], "No Trigger")
+        self.assertEqual(res["total_score"], 0)
+        self.assertEqual(len(res["matched_keywords"]), 0)
 
     def test_swagger_html_unauthenticated(self):
         """Should return Swagger UI HTML page at /docs without requiring an API key."""
