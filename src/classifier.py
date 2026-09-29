@@ -180,7 +180,11 @@ def classify_weighted(text: str):
         {
             "stem": m["stem"],
             "weight": m["weight"],
-            "zone": m["zone"]
+            "zone": m["zone"],
+            "category": m["category"],
+            "type": m["type"],
+            "position": m["position"],
+            "reason": m["reason"],
         }
         for m in triggered
     ]

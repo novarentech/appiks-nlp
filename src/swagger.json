@@ -80,6 +80,22 @@
                           "zone": {
                             "type": "string",
                             "example": "Yellow"
+                          },
+                          "category": {
+                            "type": "string",
+                            "example": "Hopelessness"
+                          },
+                          "type": {
+                            "type": "string",
+                            "example": "single_neutral"
+                          },
+                          "position": {
+                            "type": "integer",
+                            "example": 2
+                          },
+                          "reason": {
+                            "type": "string",
+                            "example": "matched"
                           }
                         }
                       }
