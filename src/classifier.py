@@ -10,7 +10,10 @@ stemmer = factory_stemmer.create_stemmer()
 ABBREVIATIONS = {
     "ga": "tidak",
     "engga": "tidak",
+    "ngga": "tidak",
+    "kagak": "tidak",
     "kgk": "tidak",
+    "gk": "tidak",
     "g": "tidak",
     "gpp": "tidak apa apa",
     "yg": "yang",
