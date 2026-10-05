@@ -32,44 +32,56 @@ PRESERVE = NEGATION_WORDS | KEYWORD_STOPWORDS
 _SASTRAWI_SW = set(StopWordRemoverFactory().get_stop_words())
 STOPWORDS_SAFE = _SASTRAWI_SW - PRESERVE
 
-# Dictionary of keywords: stem/phrase -> (weight, zone, kw_type, category)
+# Dictionary of keywords v1.2 (Validated by Clinical Psychologist): stem/phrase -> (weight, zone, kw_type, category)
 KAMUS = {
-    # ===== YELLOW ZONE =====
-    "hampa":       (4, "Yellow", "single_neutral",       "Hopelessness"),
-    "kosong":      (4, "Yellow", "single_neutral",       "Hopelessness"),
-    "sendiri":     (3, "Yellow", "single_neutral",       "Hopelessness"),
-    "putus asa":   (6, "Yellow", "single_neutral",       "Hopelessness"),
-    "ada harap":   (6, "Yellow", "phrase_with_negation", "Hopelessness"),   # "ga ada harapan"
-    "ada guna":    (6.5, "Yellow", "phrase_with_negation", "Worthlessness"),# "tidak ada gunanya"
-    "guna":        (6, "Yellow", "phrase_with_negation", "Worthlessness"),  # "tidak ada guna" / single keyword
-    "beban":       (4, "Yellow", "single_neutral",       "Worthlessness"),
-    "susah":       (4, "Yellow", "single_neutral",       "Worthlessness"),  # dari "menyusahkan"
-    "gagal":       (3, "Yellow", "single_neutral",       "Worthlessness"),
-    "bodoh":       (3, "Yellow", "single_neutral",       "Worthlessness"),
-    "capek":       (3, "Yellow", "single_neutral",       "Hopelessness"),
-    "lelah":       (3, "Yellow", "single_neutral",       "Hopelessness"),
-    "lelah hidup": (6.5, "Yellow", "single_neutral",     "Hopelessness"),
-    "capek hidup": (7, "Yellow", "single_neutral",       "Hopelessness"),
-    "bosan hidup": (7, "Yellow", "single_neutral",       "Hopelessness"),
-    "serah":       (5, "Yellow", "single_neutral",       "Hopelessness"),   # dari "menyerah"
-    "puruk":       (4, "Yellow", "single_neutral",       "Hopelessness"),   # dari "terpuruk"
-    "harga":       (4, "Yellow", "phrase_with_negation", "Worthlessness"),  # "tidak dihargai"
+    # ===== YELLOW ZONE (27 Keywords) =====
+    "hampa":           (4.5, "Yellow", "single_neutral",       "Hopelessness"),   # hampa (Hopelessness, 4.5)
+    "kosong":          (4.5, "Yellow", "single_neutral",       "Hopelessness"),   # kosong (Hopelessness, 4.5)
+    "sendiri":         (3.0, "Yellow", "single_neutral",       "Hopelessness"),   # sendirian -> stem 'sendiri' (Hopelessness, 3.0)
+    "putus asa":       (6.5, "Yellow", "single_neutral",       "Hopelessness"),   # putus asa (Hopelessness, 6.5)
+    "ada harap":       (6.5, "Yellow", "phrase_with_negation", "Hopelessness"),   # tidak ada harapan -> stem 'ada harap' (Hopelessness, 6.5)
+    "ada guna":        (6.5, "Yellow", "phrase_with_negation", "Worthlessness"),  # tidak ada gunanya -> stem 'ada guna' (Worthlessness, 6.5)
+    "guna":            (6.0, "Yellow", "phrase_with_negation", "Worthlessness"),  # tidak berguna -> stem 'guna' (Worthlessness, 6.0)
+    "beban":           (5.5, "Yellow", "single_neutral",       "Worthlessness"),  # beban (Worthlessness, 5.5)
+    "susah":           (5.5, "Yellow", "single_neutral",       "Worthlessness"),  # menyusahkan -> stem 'susah' (Worthlessness, 5.5)
+    "gagal":           (4.0, "Yellow", "single_neutral",       "Worthlessness"),  # gagal (Worthlessness, 4.0)
+    "bodoh":           (4.0, "Yellow", "single_neutral",       "Worthlessness"),  # bodoh (Worthlessness, 4.0)
+    "lelah hidup":     (6.5, "Yellow", "single_neutral",       "Hopelessness"),   # lelah hidup (Hopelessness, 6.5)
+    "capek hidup":     (7.0, "Yellow", "single_neutral",       "Hopelessness"),   # capek hidup (Hopelessness, 7.0)
+    "bosan hidup":     (7.0, "Yellow", "single_neutral",       "Hopelessness"),   # bosan hidup (Hopelessness, 7.0)
+    "serah":           (6.0, "Yellow", "single_neutral",       "Hopelessness"),   # menyerah -> stem 'serah' (Hopelessness, 6.0)
+    "puruk":           (4.5, "Yellow", "single_neutral",       "Hopelessness"),   # terpuruk -> stem 'puruk' (Hopelessness, 4.5)
+    # Kunci 'harga': menggabungkan 'tidak berharga' (6.0) dan 'tidak dihargai' (4.5) menjadi satu stem 'harga'.
+    # Aturan: bila dua kata kunci berbagi bentuk dasar, dipakai bobot tertinggi (6.0), sesuai prinsip mengutamakan recall yang disetujui validator.
+    "harga":           (6.0, "Yellow", "phrase_with_negation", "Worthlessness"),  # tidak berharga (6) & tidak dihargai (4.5) -> stem 'harga' (Worthlessness, 6.0)
+    "overthinking":    (4.5, "Yellow", "single_neutral",       "Worthlessness"),  # overthinking (Worthlessness, 4.5)
+    "mental down":     (4.0, "Yellow", "single_neutral",       "Hopelessness"),   # mental down (Hopelessness, 4.0)
+    "burnout":         (5.0, "Yellow", "single_neutral",       "Hopelessness"),   # burnout (Hopelessness, 5.0)
+    "bullying":        (7.0, "Yellow", "single_neutral",       "Worthlessness"),  # bullying (Worthlessness, 7.0)
+    "harap":           (6.0, "Yellow", "phrase_with_negation", "Hopelessness"),   # tidak berharap -> stem 'harap' (Hopelessness, 6.0)
+    "lelah":           (3.0, "Yellow", "single_neutral",       "Hopelessness"),   # lelah (Hopelessness, 3.0)
+    "capek":           (3.0, "Yellow", "single_neutral",       "Hopelessness"),   # capek (Hopelessness, 3.0)
+    "sepi":            (4.0, "Yellow", "single_neutral",       "Hopelessness"),   # sepi (Hopelessness, 4.0)
+    "sia sia":         (4.0, "Yellow", "single_neutral",       "Hopelessness"),   # sia-sia -> stem 'sia sia' (Hopelessness, 4.0)
 
-    # ===== RED ZONE =====
-    "bunuh diri":      (10, "Red", "single_negative",      "Direct Suicidal Ideation"),
-    "gantung diri":    (10, "Red", "single_negative",      "Direct Suicidal Ideation"),
-    "akhir hidup":     (10, "Red", "single_negative",      "Direct Suicidal Ideation"),  # "akhiri hidup"
-    "mati saja":       (9,  "Red", "single_negative",      "Death Wish"),
-    "mau mati":        (9,  "Red", "single_negative",      "Death Wish"),
-    "hilang nyawa":    (10, "Red", "single_negative",      "Direct Suicidal Ideation"),  # "hilangkan nyawa"
-    "sayat":           (9,  "Red", "single_negative",      "Self-Harm Indication"),
-    "luka diri":       (9,  "Red", "single_negative",      "Self-Harm Indication"),      # "melukai diri"
-    "sakit diri":      (8,  "Red", "single_negative",      "Self-Harm Indication"),      # "sakiti diri"
-    "overdosis":       (9,  "Red", "single_negative",      "Self-Harm Indication"),
-    "racun":           (7,  "Red", "single_negative",      "Self-Harm Indication"),
-    "selamat tinggal": (8,  "Red", "single_neutral",       "Pre-Suicide Indicators"),
-    "akhir kali":      (7,  "Red", "single_neutral",       "Pre-Suicide Indicators"),    # "terakhir kalinya"
-    "ada lagi":        (8,  "Red", "phrase_with_negation", "Pre-Suicide Indicators"),    # "tidak akan ada lagi"
+    # ===== RED ZONE (17 Keywords) =====
+    "bunuh diri":      (10.0, "Red", "single_negative",      "Direct Suicidal Ideation"), # bunuh diri (Direct SI, 10.0)
+    "gantung diri":    (10.0, "Red", "single_negative",      "Direct Suicidal Ideation"), # gantung diri (Direct SI, 10.0)
+    "akhir hidup":     (10.0, "Red", "single_negative",      "Direct Suicidal Ideation"), # akhiri hidup -> stem 'akhir hidup' (Direct SI, 10.0)
+    "hilang nyawa":    (10.0, "Red", "single_negative",      "Direct Suicidal Ideation"), # hilangkan nyawa -> stem 'hilang nyawa' (Direct SI, 10.0)
+    "mati saja":       (9.0,  "Red", "single_negative",      "Death Wish"),               # mati saja (Death Wish, 9.0)
+    "mau mati":        (9.0,  "Red", "single_negative",      "Death Wish"),               # mau mati (Death Wish, 9.0)
+    "hilang":          (7.0,  "Red", "single_negative",      "Death Wish"),               # hilang (Death Wish, 7.0)
+    "sayat":           (9.5,  "Red", "single_negative",      "Self-Harm Indication"),     # sayat (Self-Harm, 9.5)
+    "luka diri":       (9.0,  "Red", "single_negative",      "Self-Harm Indication"),     # melukai diri -> stem 'luka diri' (Self-Harm, 9.0)
+    "sakit diri":      (8.5,  "Red", "single_negative",      "Self-Harm Indication"),     # menyakiti diri -> stem 'sakit diri' (Self-Harm, 8.5)
+    "overdosis":       (9.5,  "Red", "single_negative",      "Self-Harm Indication"),     # overdosis (Self-Harm, 9.5)
+    "racun":           (7.5,  "Red", "single_negative",      "Self-Harm Indication"),     # racun (Self-Harm, 7.5)
+    "selamat tinggal": (7.5,  "Red", "single_neutral",       "Pre-Suicide Indicators"),   # selamat tinggal (Pre-Suicide, 7.5)
+    "akhir kali":      (7.0,  "Red", "single_neutral",       "Pre-Suicide Indicators"),   # terakhir kalinya -> stem 'akhir kali' (Pre-Suicide, 7.0)
+    "ada lagi":        (8.0,  "Red", "phrase_with_negation", "Pre-Suicide Indicators"),   # tidak akan ada lagi -> stem 'ada lagi' (Pre-Suicide, 8.0)
+    "pamit lama":      (8.0,  "Red", "single_neutral",       "Pre-Suicide Indicators"),   # pamit selamanya -> stem 'pamit lama' ('selamanya' di-stem Sastrawi jadi 'lama', 8.0)
+    "pergi lama":      (8.0,  "Red", "single_neutral",       "Pre-Suicide Indicators"),   # pergi selamanya -> stem 'pergi lama' ('selamanya' di-stem Sastrawi jadi 'lama', 8.0)
 }
 
 THRESHOLD_YELLOW = 5
