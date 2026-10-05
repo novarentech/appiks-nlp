@@ -101,14 +101,15 @@ def analyze_text():
         return jsonify({"error": "'text' field must be a string."}), 400
 
     try:
-        zone_status, matched_keywords, total_score, _ = classify_weighted(text)
+        zone_status, matched_keywords, total_score, reason = classify_weighted(text)
         
         # Structure the response precisely according to the spec:
         # {"zone_status": "string", "total_score": int, "matched_keywords": []}
         response = {
             "zone_status": zone_status,
             "total_score": total_score,
-            "matched_keywords": matched_keywords
+            "matched_keywords": matched_keywords,
+            "reason": reason
         }
         return jsonify(response), 200
 

@@ -238,4 +238,4 @@ def classify_weighted(text: str):
         "skipped": skipped,
     }
 
-    return zone, matched_keywords, total_score, breakdown
+    return zone, matched_keywords, total_score, reason
