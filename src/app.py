@@ -3,7 +3,11 @@ import logging
 import json
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-from src.classifier import classify_weighted
+
+try:
+    from src.classifier import classify_weighted
+except ModuleNotFoundError:
+    from classifier import classify_weighted
 
 # Load environment variables
 load_dotenv()

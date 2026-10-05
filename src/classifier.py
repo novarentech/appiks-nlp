@@ -40,12 +40,15 @@ KAMUS = {
     "sendiri":     (3, "Yellow", "single_neutral",       "Hopelessness"),
     "putus asa":   (6, "Yellow", "single_neutral",       "Hopelessness"),
     "ada harap":   (6, "Yellow", "phrase_with_negation", "Hopelessness"),   # "ga ada harapan"
-    "ada guna":    (6, "Yellow", "phrase_with_negation", "Worthlessness"),  # "tidak ada gunanya"
+    "ada guna":    (6.5, "Yellow", "phrase_with_negation", "Worthlessness"),# "tidak ada gunanya"
+    "guna":        (6, "Yellow", "phrase_with_negation", "Worthlessness"),  # "tidak ada guna" / single keyword
     "beban":       (4, "Yellow", "single_neutral",       "Worthlessness"),
     "susah":       (4, "Yellow", "single_neutral",       "Worthlessness"),  # dari "menyusahkan"
     "gagal":       (3, "Yellow", "single_neutral",       "Worthlessness"),
     "bodoh":       (3, "Yellow", "single_neutral",       "Worthlessness"),
-    "lelah hidup": (7, "Yellow", "single_neutral",       "Hopelessness"),
+    "capek":       (3, "Yellow", "single_neutral",       "Hopelessness"),
+    "lelah":       (3, "Yellow", "single_neutral",       "Hopelessness"),
+    "lelah hidup": (6.5, "Yellow", "single_neutral",     "Hopelessness"),
     "capek hidup": (7, "Yellow", "single_neutral",       "Hopelessness"),
     "bosan hidup": (7, "Yellow", "single_neutral",       "Hopelessness"),
     "serah":       (5, "Yellow", "single_neutral",       "Hopelessness"),   # dari "menyerah"
@@ -135,6 +138,7 @@ def detect_keyword(tokens: list, kamus_ngram: dict, n: int) -> list:
                 "category": category,
                 "type": kw_type,
                 "position": pos,
+                "length": n,
             }
 
             if kw_type == "single_negative" and is_negated(tokens, pos):
@@ -150,18 +154,39 @@ def detect_keyword(tokens: list, kamus_ngram: dict, n: int) -> list:
 
 def classify_weighted(text: str):
     """
-    Classify distress level of text using the revised 3-layer weighted scoring algorithm (Approach C).
+    Classify distress level of text using the revised 3-layer weighted scoring algorithm (Approach C)
+    with token span overlap suppression (longest match priority).
 
     Returns tuple: (zone_status, matched_keywords, total_score, breakdown)
     """
     tokens = preprocess_appiks(text)
 
     all_matches = []
-    for n in [1, 2, 3]:
+    for n in [3, 2, 1]:
         all_matches.extend(detect_keyword(tokens, KAMUS_BY_NGRAM[n], n))
 
-    triggered = [m for m in all_matches if m["triggered"]]
-    skipped = [m for m in all_matches if not m["triggered"]]
+    candidate_triggered = [m for m in all_matches if m["triggered"]]
+    skipped_negation = [m for m in all_matches if not m["triggered"]]
+
+    # Longest match priority: sort by token length descending, then position ascending
+    candidate_triggered.sort(key=lambda m: (-m["length"], m["position"]))
+
+    triggered = []
+    suppressed = []
+    occupied_positions = set()
+
+    for m in candidate_triggered:
+        span = set(range(m["position"], m["position"] + m["length"]))
+        if span & occupied_positions:
+            suppressed.append({**m, "triggered": False, "reason": "suppressed_overlap"})
+        else:
+            occupied_positions.update(span)
+            triggered.append(m)
+
+    # Restore natural word appearance order
+    triggered.sort(key=lambda m: m["position"])
+
+    skipped = skipped_negation + suppressed
 
     total_score = sum(m["weight"] for m in triggered)
     has_red_keyword = any(m["zone"] == "Red" for m in triggered)
@@ -198,7 +223,7 @@ def classify_weighted(text: str):
         "reason": reason,
         "categories": sorted({m["category"] for m in triggered}),
         "triggered": triggered,
-        "skipped": skipped
+        "skipped": skipped,
     }
 
     return zone, matched_keywords, total_score, breakdown

@@ -83,28 +83,70 @@ class TestNLPAPI(unittest.TestCase):
         self.assertEqual(res["error"], "'text' field must be a string.")
 
     def test_no_trigger_academic_case(self):
-        """Should classify academic complaint as 'No Trigger' with score 0."""
+        """Should classify academic complaint below threshold (score < 5)."""
         body = {"text": "Hari ini capek banget belajar matematika"}
         headers = {"X-APPIKS-NLP-KEY": self.api_token}
         res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
         
         self.assertEqual(res["zone_status"], "No Trigger")
-        self.assertEqual(res["total_score"], 0)
-        self.assertEqual(len(res["matched_keywords"]), 0)
+        self.assertEqual(res["total_score"], 3)
+        self.assertEqual(len(res["matched_keywords"]), 1)
+        self.assertEqual(res["matched_keywords"][0]["stem"], "capek")
 
     def test_yellow_zone_case(self):
-        """Should classify 'ga ada gunanya lagi' as 'Yellow Zone' with score 6."""
+        """Should classify 'ga ada gunanya lagi' as 'Yellow Zone' with score 6.5."""
         body = {"text": "Aku ga ada gunanya lagi"}
         headers = {"X-APPIKS-NLP-KEY": self.api_token}
         res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
         
         self.assertEqual(res["zone_status"], "Yellow Zone")
-        self.assertEqual(res["total_score"], 6)
+        self.assertEqual(res["total_score"], 6.5)
         
         self.assertEqual(len(res["matched_keywords"]), 1)
         self.assertEqual(res["matched_keywords"][0]["stem"], "ada guna")
-        self.assertEqual(res["matched_keywords"][0]["weight"], 6)
+        self.assertEqual(res["matched_keywords"][0]["weight"], 6.5)
         self.assertEqual(res["matched_keywords"][0]["zone"], "Yellow")
+
+    def test_overlap_suppression_tidak_ada_gunanya(self):
+        """Should count 'tidak ada gunanya' as 6.5 (suppressing 'guna')."""
+        body = {"text": "tidak ada gunanya"}
+        headers = {"X-APPIKS-NLP-KEY": self.api_token}
+        res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
+        
+        self.assertEqual(res["total_score"], 6.5)
+        self.assertEqual(len(res["matched_keywords"]), 1)
+        self.assertEqual(res["matched_keywords"][0]["stem"], "ada guna")
+
+    def test_overlap_suppression_capek_hidup(self):
+        """Should count 'capek hidup' as 7 (suppressing 'capek')."""
+        body = {"text": "capek hidup"}
+        headers = {"X-APPIKS-NLP-KEY": self.api_token}
+        res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
+        
+        self.assertEqual(res["total_score"], 7)
+        self.assertEqual(len(res["matched_keywords"]), 1)
+        self.assertEqual(res["matched_keywords"][0]["stem"], "capek hidup")
+
+    def test_overlap_suppression_lelah_hidup(self):
+        """Should count 'lelah hidup' as 6.5 (suppressing 'lelah')."""
+        body = {"text": "lelah hidup"}
+        headers = {"X-APPIKS-NLP-KEY": self.api_token}
+        res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
+        
+        self.assertEqual(res["total_score"], 6.5)
+        self.assertEqual(len(res["matched_keywords"]), 1)
+        self.assertEqual(res["matched_keywords"][0]["stem"], "lelah hidup")
+
+    def test_unbounded_repetition_capek_capek(self):
+        """Should count 'capek capek' as 6 (3 + 3) across distinct token positions."""
+        body = {"text": "capek capek"}
+        headers = {"X-APPIKS-NLP-KEY": self.api_token}
+        res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
+        
+        self.assertEqual(res["total_score"], 6)
+        self.assertEqual(len(res["matched_keywords"]), 2)
+        self.assertEqual(res["matched_keywords"][0]["stem"], "capek")
+        self.assertEqual(res["matched_keywords"][1]["stem"], "capek")
 
     def test_red_zone_explicit_override(self):
         """Should classify suicide mention as 'Red Zone' due to explicit Red keyword override."""
@@ -124,7 +166,7 @@ class TestNLPAPI(unittest.TestCase):
         res = self.send_post("/api/analyze", body, headers=headers, expected_status=200)
         
         self.assertEqual(res["zone_status"], "Red Zone")
-        self.assertEqual(res["total_score"], 21)
+        self.assertEqual(res["total_score"], 20.5)
 
     def test_negation_handling_skip(self):
         """Should skip Red Zone trigger when negated ('Aku tidak mau bunuh diri')."""
